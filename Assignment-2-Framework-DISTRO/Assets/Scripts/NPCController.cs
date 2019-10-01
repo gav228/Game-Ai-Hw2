@@ -53,7 +53,7 @@ public class NPCController : MonoBehaviour {
 
                 // Get linear acceleration
                 linear = ai.Pursue();
-                linear = ai.WallAvoidance(linear);
+                linear = ai.WallAvoidance(linear, false, false);
                 // Get angular accelleration
                 angular = ai.Face();    
 
@@ -70,7 +70,7 @@ public class NPCController : MonoBehaviour {
 
                 // Get linear acceleration
                 linear = ai.Arrive();
-                linear = ai.WallAvoidance(linear);
+                linear = ai.WallAvoidance(linear, false, false);
                 // Get angular accelleration
                 angular = ai.Face();
                 
@@ -87,7 +87,7 @@ public class NPCController : MonoBehaviour {
 
                 // Get linear acceleration
                 linear = ai.Evade();
-                linear = ai.WallAvoidance(linear);
+                linear = ai.WallAvoidance(linear, false, false);
                 // Get angular acceleration
                 angular = ai.Face_Where_Im_Going(linear);
                 break;
@@ -109,7 +109,7 @@ public class NPCController : MonoBehaviour {
                 }
 
                 linear = ai.Pursue();
-                linear = ai.WallAvoidance(linear);
+                linear = ai.WallAvoidance(linear, false, false);
                 angular = ai.Face_Where_Im_Going(linear);
                 
                 // linear = ai.whatever();  -- replace with the desired calls
@@ -123,7 +123,7 @@ public class NPCController : MonoBehaviour {
                 }
 
                 linear = ai.Pursue();
-                linear = ai.WallAvoidance(linear);
+                linear = ai.WallAvoidance(linear, true, false);
                 angular = ai.Face_Where_Im_Going(linear);
 
                 // linear = ai.whatever();  -- replace with the desired calls
@@ -136,7 +136,7 @@ public class NPCController : MonoBehaviour {
                 }
 
                 linear = ai.Pursue();
-                linear = ai.WallAvoidance(linear);
+                linear = ai.WallAvoidance(linear, false, true);
                 angular = ai.Face_Where_Im_Going(linear);
 
                 // linear = ai.whatever();  -- replace with the desired calls
@@ -149,7 +149,7 @@ public class NPCController : MonoBehaviour {
                 }
 
                 linear = ai.ChasePlayer();
-                linear = ai.WallAvoidance(linear);
+                linear = ai.WallAvoidance(linear, false, false);
                 angular = ai.Face_Where_Im_Going(linear);
 
                 // linear = ai.whatever();  -- replace with the desired calls

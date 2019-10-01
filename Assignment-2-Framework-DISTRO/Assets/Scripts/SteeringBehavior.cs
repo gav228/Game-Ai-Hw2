@@ -48,6 +48,11 @@ public class SteeringBehavior : MonoBehaviour {
     public GameObject[] Path;
     public int current = 0;
 
+    //Private variable for collision
+    public GameObject LINE; 
+
+    private bool collided = false;
+    private string collidedN = "";
     protected void Start() {
         agent = GetComponent<NPCController>();
         wanderOrientation = agent.orientation;
@@ -367,21 +372,33 @@ public class SteeringBehavior : MonoBehaviour {
         return angular;
     }
 
-    public Vector3 WallAvoidance(Vector3 linear)
+    public Vector3 WallAvoidance(Vector3 linear, bool CD, bool CP)
     {
-        
+
         // Setup collision detection rayVector
         Vector3 rayVector = agent.velocity;
-        
+
 
         RaycastHit hit;
-        bool collision = Physics.Raycast(agent.position, rayVector,out hit, lookAhead);
+        bool collision;
+        if(!CP)
+            collision = Physics.Raycast(agent.position, rayVector, out hit, lookAhead);
+        else
+            collision = Physics.Raycast(agent.position, rayVector, out hit, lookAhead*3);
 
         if (collision)
         {
             Debug.Log(hit.distance);
-            Vector3 target_position =  hit.point + hit.normal * avoidDistance;
-            agent.DrawCircle(target_position, 1);
+            Vector3 target_position = hit.point + hit.normal * avoidDistance;
+            if (!CD && !CP)
+                agent.DrawCircle(target_position, 1);
+            else
+            {
+                
+                GameObject collidedBoi = (GameObject)Instantiate(LINE, agent.position - target_position , Quaternion.identity);
+
+                Destroy(collidedBoi, 3.0f);
+            }
             return (target_position - agent.position) * maxAcceleration;
         }
 
@@ -392,7 +409,7 @@ public class SteeringBehavior : MonoBehaviour {
 
     public Vector3 CollisionDetection (Vector3 linear)
     {
-
+        collided = true;
         // Setup collision detection rayVector
         Vector3 rayVector = agent.velocity;
 
@@ -404,7 +421,7 @@ public class SteeringBehavior : MonoBehaviour {
         {
             Debug.Log(hit.distance);
             Vector3 target_position = hit.point + hit.normal * avoidDistance;
-            agent.DrawCircle(target_position, 1);
+            GameObject.Find("Line").GetComponent<liner>().DrawCircle(target_position, 1);
             return (target_position - agent.position) * maxAcceleration;
         }
 
@@ -469,8 +486,7 @@ public class SteeringBehavior : MonoBehaviour {
         // Return vector to predicted location
         return predicted_position - agent.position;
     }
-
-
+    
     // ETC.
 
 }

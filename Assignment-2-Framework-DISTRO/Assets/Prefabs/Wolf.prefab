@@ -146,6 +146,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   agent: {fileID: 114185916214848506}
   target: {fileID: 0}
+  Player: {fileID: 0}
   maxPrediction: 1
   maxAcceleration: 5
   maxSpeed: 5
@@ -159,8 +160,11 @@ MonoBehaviour:
   wanderOffset: 5
   wanderRadius: 2
   wanderRate: 1
+  avoidDistance: 0
+  lookAhead: 0
   Path: []
   current: 0
+  LINE: {fileID: 6946278694642317591, guid: 21874cd6a3fc16b46917a434b7eb8547, type: 3}
 --- !u!120 &120447287367831728
 LineRenderer:
   m_ObjectHideFlags: 0
