@@ -53,6 +53,7 @@ public class SteeringBehavior : MonoBehaviour {
 
     private bool collided = false;
     private string collidedN = "";
+
     protected void Start() {
         agent = GetComponent<NPCController>();
         wanderOrientation = agent.orientation;
@@ -67,40 +68,41 @@ public class SteeringBehavior : MonoBehaviour {
         maxRotation = 10f;
     }
 
+    // Maps roation to -pi, pi interval
     public float mapToRange(float rotation)
     {
-        float rotationRad = rotation * Mathf.Deg2Rad;
-        if (rotationRad <= (-1 * Mathf.PI))
+        while (rotation > Mathf.PI)
         {
-            rotationRad += 2 * Mathf.PI; //RotationRad is negative and we want it to be positive
+            rotation -= 2 * Mathf.PI;
         }
-        else if (rotationRad > Mathf.PI)
+        while (rotation < -Mathf.PI)
         {
-            rotationRad += (-2 * Mathf.PI);
+            rotation += 2 * Mathf.PI;
         }
-
-        rotationRad = rotationRad - 2 * Mathf.PI * Mathf.Floor((rotationRad + Mathf.PI) / (2 * Mathf.PI));
-        return rotationRad;
+        return rotation;
     }
 
+    // Basic seek algorithm
     public Vector3 Seek()
     {
         return target.position - agent.position;
     }
 
+    // Basic flee algorithm
     public Vector3 Flee()
     {
         return agent.position - target.position;
     }
 
+    // Arrive 
     public Vector3 Arrive()
     {
+        // Check for having arrived
         if (target.position[0] - agent.position[0] < 1 && target.position[2] - agent.position[2] < 1)
         {
             agent.velocity = new Vector3(0, 0, 0);
             return new Vector3(0, 0, 0);
         }
-        
 
         return (target.position - agent.position) / timeToTarget;
     }
@@ -129,11 +131,10 @@ public class SteeringBehavior : MonoBehaviour {
             prediction = distance / speed;
         }
 
-
-    
         // Add the target's current speed to prediction
         predicted_position += target.velocity * prediction;
 
+        // Draw the predicted location
         agent.DrawCircle(predicted_position, 0.5f);
 
         // Return vector to predicted location
@@ -167,12 +168,54 @@ public class SteeringBehavior : MonoBehaviour {
         // Add the target's current speed to prediction
         predicted_position += target.velocity * prediction;
 
+        // Draw the predicted position
         agent.DrawCircle(predicted_position, 0.5f);
 
         // Return vector away from predicted location
         return agent.position - predicted_position;
     }
 
+    // Align algorithm 
+    public float Align()
+    {
+        
+        // Get the naive direction to the target
+        float rotation = target.orientation - agent.orientation;
+
+        // Map the result to the (-pi, pi) interval
+        rotation = mapToRange(rotation);
+
+        float rotationSize = Mathf.Abs(rotation);
+
+        // Check if we are there, return no steering
+        if (rotationSize < targetRadiusA)
+        {
+            agent.rotation = 0;
+            return 0;
+        }
+
+        float targetRotation = maxRotation;
+
+        // The final target rotation 
+        targetRotation *= rotation / rotationSize;
+
+        // Acceleration tries to get to the target rotation
+        float angular = targetRotation - agent.rotation;
+        angular /= timeToTarget;
+
+        // Check if the acceleration is too great
+        float angularAcceleration = Mathf.Abs(angular);
+        if (angularAcceleration > maxAngularAcceleration)
+        {
+            angular /= angularAcceleration;
+            angular *= maxAngularAcceleration;
+        }
+
+        return angular;
+
+    }
+
+    // Face Algorithm based on align algorithm but using position instead of orientation
     public float Face()
     {
         Vector3 direction = target.position - agent.position;
@@ -186,28 +229,21 @@ public class SteeringBehavior : MonoBehaviour {
         // Get the naive direction to the target
         float rotation = Mathf.Atan2(direction.x, direction.z) - agent.orientation;
 
-        // Map the result to the (0, 2pi) interval
-        while (rotation > Mathf.PI)
-        {
-            rotation -= 2 * Mathf.PI;
-        }
-        while (rotation < -Mathf.PI)
-        {
-            rotation += 2 * Mathf.PI;
-        }
+        // Map the result to the (-pi, pi) interval
+        rotation = mapToRange(rotation);
+
         float rotationSize = Mathf.Abs(rotation);
 
         // Check if we are there, return no steering
         if (rotationSize < targetRadiusA)
         {
             agent.rotation = 0;
+            return 0;
         }
 
-        // If we are outside the slowRadius, then use max rotation
-        // Otherwise calculate a scaled rotation
-        float targetRotation = (rotationSize > slowRadiusA ? maxRotation : maxRotation * rotationSize / slowRadiusA);
+        float targetRotation = maxRotation;
 
-        // The final target rotation combines speed (already in the variable) and direction
+        // The final target rotation 
         targetRotation *= rotation / rotationSize;
 
         // Acceleration tries to get to the target rotation
@@ -225,6 +261,8 @@ public class SteeringBehavior : MonoBehaviour {
         return angular;
     }
 
+
+    // Uses face algorithm on where we are already heading
     public float Face_Where_Im_Going(Vector3 linear)
     {
         Vector3 direction = linear;
@@ -238,15 +276,8 @@ public class SteeringBehavior : MonoBehaviour {
         // Get the naive direction to the target
         float rotation = Mathf.Atan2(direction.x, direction.z) - agent.orientation;
 
-        // Map the result to the (0, 2pi) interval
-        while (rotation > Mathf.PI)
-        {
-            rotation -= 2 * Mathf.PI;
-        }
-        while (rotation < -Mathf.PI)
-        {
-            rotation += 2 * Mathf.PI;
-        }
+        // Map the result to the 
+        rotation = mapToRange(rotation);
         float rotationSize = Mathf.Abs(rotation);
 
         // Check if we are there, return no steering
@@ -255,11 +286,9 @@ public class SteeringBehavior : MonoBehaviour {
             agent.rotation = 0;
         }
 
-        // If we are outside the slowRadius, then use max rotation
-        // Otherwise calculate a scaled rotation
-        float targetRotation = (rotationSize > slowRadiusA ? maxRotation : maxRotation * rotationSize / slowRadiusA);
+        float targetRotation = maxRotation;
 
-        // The final target rotation combines speed (already in the variable) and direction
+        // The final target rotation 
         targetRotation *= rotation / rotationSize;
 
         // Acceleration tries to get to the target rotation
@@ -277,58 +306,40 @@ public class SteeringBehavior : MonoBehaviour {
         return angular;
     }
 
-    public float Align()
-    {
-        float rotation = Vector3.Angle(Vector3.forward, target.position) - agent.transform.eulerAngles.y;
-        print(Vector3.Angle(Vector3.forward, target.position));
-
-        rotation = mapToRange(rotation);
-        float rotationSize = Mathf.Abs(rotation);
-
-        float targetRotation = maxRotation;
-        targetRotation *= rotation / rotationSize;
-
-        return targetRotation - agent.rotation;
-
-    }
-
+    
+    // Uses orientation and face algorithm with a splash of collision
     public float Wander(out Vector3 linear)
     {
         // Update the wander orientation
         wanderOrientation += (Random.value - Random.value) * wanderRate;
 
         // Calculate the combined target orientation
-        float orientation = wanderOrientation + agent.orientation;
+        float targetOrientation = wanderOrientation + agent.orientation;
 
-        // Calculate the center of the wander circle
-        Vector3 position = agent.position + wanderOffset * new Vector3(Mathf.Sin(agent.orientation), 0, Mathf.Cos(agent.orientation));
+        // Calculate the center of the wander circle                // character.orientation.asVector()
+        Vector3 target = agent.position + wanderOffset * new Vector3(Mathf.Sin(agent.orientation), 0, Mathf.Cos(agent.orientation));
         
 
-        // Calculate the target location
-        position += wanderRadius * new Vector3(Mathf.Sin(orientation), 0, Mathf.Cos(orientation));
+        // Calculate the target location                // targetOrientation.asVector()
+        target += wanderRadius * new Vector3(Mathf.Sin(targetOrientation), 0, Mathf.Cos(targetOrientation));
+
+        // Use the same algorithm as face but with new target
 
         // Work out the direction to target
-        Vector3 direction = position - agent.position;
+        Vector3 direction = target - agent.position;
 
         // Check for a zero direction, and make no change if so
         if (direction.magnitude == 0)
         {
-            linear = Vector2.zero;
+            linear = new Vector3(0, 0, 0); 
             return 0;
         }
 
         // Get the naive direction to the target
         float rotation = Mathf.Atan2(direction.x, direction.z) - agent.orientation;
 
-        // Map the result to the (0, 2pi) interval
-        while (rotation > Mathf.PI)
-        {
-            rotation -= 2 * Mathf.PI;
-        }
-        while (rotation < -Mathf.PI)
-        {
-            rotation += 2 * Mathf.PI;
-        }
+        // Map the result to the 
+        rotation = mapToRange(rotation);
         float rotationSize = Mathf.Abs(rotation);
 
         // Check if we are there, return no steering
@@ -337,11 +348,9 @@ public class SteeringBehavior : MonoBehaviour {
             agent.rotation = 0;
         }
 
-        // If we are outside the slowRadius, then use max rotation
-        // Otherwise calculate a scaled rotation
-        float targetRotation = (rotationSize > slowRadiusA ? maxRotation : maxRotation * rotationSize / slowRadiusA);
+        float targetRotation = maxRotation;
 
-        // The final target rotation combines speed (already in the variable) and direction
+        // The final target rotation 
         targetRotation *= rotation / rotationSize;
 
         // Acceleration tries to get to the target rotation
@@ -368,83 +377,43 @@ public class SteeringBehavior : MonoBehaviour {
             
         }
 
-
         return angular;
     }
 
+    // Attemps to avoid walls by casting a ray and using the normal
+    //Wall Avoidance deals with Collision Detection and Collision Prediction
+    // when CD is true then its Collision Detection
+    // When it is CP then Collision Prediction
     public Vector3 WallAvoidance(Vector3 linear, bool CD, bool CP)
     {
 
         // Setup collision detection rayVector
         Vector3 rayVector = agent.velocity;
 
+        //IGNORE SELF BY DOING THIS
+        int layerMask = 1 << 9;
+        layerMask = ~layerMask;
 
         RaycastHit hit;
         bool collision;
         if(!CP)
-            collision = Physics.Raycast(agent.position, rayVector, out hit, lookAhead);
+            collision = Physics.Raycast(agent.position, rayVector, out hit, lookAhead*15, layerMask);
         else
-            collision = Physics.Raycast(agent.position, rayVector, out hit, lookAhead*3);
+            collision = Physics.Raycast(agent.position, rayVector, out hit, lookAhead*100, layerMask);
 
         if (collision)
         {
-            Debug.Log(hit.distance);
+            Debug.Log(hit.transform.name);
             Vector3 target_position = hit.point + hit.normal * avoidDistance;
             if (!CD && !CP)
                 agent.DrawCircle(target_position, 1);
             else
             {
                 
-                GameObject collidedBoi = (GameObject)Instantiate(LINE, agent.position - target_position , Quaternion.identity);
+                GameObject collidedBoi = (GameObject)Instantiate(LINE, hit.point , Quaternion.identity);
 
                 Destroy(collidedBoi, 3.0f);
             }
-            return (target_position - agent.position) * maxAcceleration;
-        }
-
-
-        return linear;
-
-    }
-
-    public Vector3 CollisionDetection (Vector3 linear)
-    {
-        collided = true;
-        // Setup collision detection rayVector
-        Vector3 rayVector = agent.velocity;
-
-
-        RaycastHit hit;
-        bool collision = Physics.Raycast(agent.position, rayVector, out hit, lookAhead);
-
-        if (collision)
-        {
-            Debug.Log(hit.distance);
-            Vector3 target_position = hit.point + hit.normal * avoidDistance;
-            GameObject.Find("Line").GetComponent<liner>().DrawCircle(target_position, 1);
-            return (target_position - agent.position) * maxAcceleration;
-        }
-
-
-        return linear;
-
-    }
-
-    public Vector3 CollisionPrediction(Vector3 linear)
-    {
-
-        // Setup collision detection rayVector
-        Vector3 rayVector = agent.velocity;
-
-
-        RaycastHit hit;
-        bool collision = Physics.Raycast(agent.position, rayVector, out hit, lookAhead);
-
-        if (collision)
-        {
-            Debug.Log(hit.distance);
-            Vector3 target_position = hit.point + hit.normal * avoidDistance;
-            agent.DrawCircle(target_position, 1);
             return (target_position - agent.position) * maxAcceleration;
         }
 

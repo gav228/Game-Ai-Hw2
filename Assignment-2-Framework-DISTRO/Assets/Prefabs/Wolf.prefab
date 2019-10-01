@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 114185916214848506}
   - component: {fileID: 114403713985068348}
   - component: {fileID: 120447287367831728}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Wolf
   m_TagString: Wolf
   m_Icon: {fileID: 0}
@@ -272,7 +272,7 @@ GameObject:
   - component: {fileID: 33571998131710490}
   - component: {fileID: 23583633993152576}
   - component: {fileID: 65427516488141688}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}

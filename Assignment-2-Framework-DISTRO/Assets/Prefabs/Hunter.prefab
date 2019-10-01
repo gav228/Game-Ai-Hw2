@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 114671874507944792}
   - component: {fileID: 114839489207466526}
   - component: {fileID: 120817520483779392}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Hunter
   m_TagString: Hunter
   m_Icon: {fileID: 0}
@@ -272,7 +272,7 @@ GameObject:
   - component: {fileID: 33618094605339248}
   - component: {fileID: 23541559109898956}
   - component: {fileID: 65547734860827904}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
