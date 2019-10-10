@@ -64,7 +64,7 @@ public class SteeringBehavior : MonoBehaviour {
         wanderRate = 2f;
         maxAcceleration = 50f;
         lookAhead = 0.1f;
-        avoidDistance = 3f;
+        avoidDistance = 5f;
         maxRotation = 10f;
     }
 
@@ -455,7 +455,87 @@ public class SteeringBehavior : MonoBehaviour {
         // Return vector to predicted location
         return predicted_position - agent.position;
     }
-    
-    // ETC.
+
+    // Calculate the Path to follow
+    public Vector3 PathFollow()
+    {
+        Vector3 steering = Vector3.zero;
+        if (current >= Path.Length)
+        {
+            return steering;
+        }
+        if ((Path[current].transform.position - agent.position).magnitude > targetRadiusL)
+        {
+            // Get the direction to the target
+            steering = Path[current].transform.position - agent.position;
+
+            // Give full acceleration along this direction
+            steering.Normalize();
+            steering *= maxAcceleration;
+        }
+        else
+        {
+            current++;
+        }
+        return steering;
+    }
+
+    // Calculate the target to face
+    public float pathFace()
+    {
+        if (current >= Path.Length)
+        {
+            return 0;
+        }
+        // Work out the direction to target
+        Vector3 direction = Path[current].transform.position - agent.position;
+
+        // Check for a zero direction, and make no change if so
+        if (direction.magnitude == 0)
+        {
+            return 0;
+        }
+
+        // Get the naive direction to the target
+        float rotation = Mathf.Atan2(direction.x, direction.z) - agent.orientation;
+
+        // Map the result to the (0, 2pi) interval
+        while (rotation > Mathf.PI)
+        {
+            rotation -= 2 * Mathf.PI;
+        }
+        while (rotation < -Mathf.PI)
+        {
+            rotation += 2 * Mathf.PI;
+        }
+        float rotationSize = Mathf.Abs(rotation);
+
+        // Check if we are there, return no steering
+        if (rotationSize < targetRadiusA)
+        {
+            agent.rotation = 0;
+        }
+
+        // If we are outside the slowRadius, then use max rotation
+        // Otherwise calculate a scaled rotation
+        float targetRotation = (rotationSize > slowRadiusA ? maxRotation : maxRotation * rotationSize / slowRadiusA);
+
+        // The final target rotation combines speed (already in the variable) and direction
+        targetRotation *= rotation / rotationSize;
+
+        // Acceleration tries to get to the target rotation
+        float angular = targetRotation - agent.rotation;
+        angular /= timeToTarget;
+
+        // Check if the acceleration is too great
+        float angularAcceleration = Mathf.Abs(angular);
+        if (angularAcceleration > maxAngularAcceleration)
+        {
+            angular /= angularAcceleration;
+            angular *= maxAngularAcceleration;
+        }
+
+        return angular;
+    }
 
 }

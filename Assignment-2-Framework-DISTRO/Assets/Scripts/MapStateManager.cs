@@ -43,6 +43,7 @@ public class MapStateManager : MonoBehaviour {
  
     private List<GameObject> spawnedNPCs;   // When you need to iterate over a number of agents.
     private List<GameObject> trees;
+    
 
     private int currentPhase = 0;           // This stores where in the "phases" the game is.
     private int previousPhase = 0;          // The "phases" we were just in
@@ -59,7 +60,7 @@ public class MapStateManager : MonoBehaviour {
     void Start() {
         narrator.text = "This is the place to mention major things going on during the demo, the \"narration.\"";
 
-        TreeCount = 100;    // TreeCount isn't showing up in Inspector
+        TreeCount = 25;    // TreeCount isn't showing up in Inspector
 
         trees = new List<GameObject>();
         SpawnTrees(TreeCount);
@@ -69,6 +70,8 @@ public class MapStateManager : MonoBehaviour {
         EnterMapStateZero();
 
         Player = GameObject.Find("Player");
+
+        
         
         //Invoke("SpawnWolf", 12);
         //Invoke("Meeting1", 30);
@@ -91,7 +94,7 @@ public class MapStateManager : MonoBehaviour {
             if (inputstring[0] == 'R')
             {
                 DestroyTrees();
-                SpawnTrees(50);
+                SpawnTrees(25);
             }
 
             // Look for a number key click
@@ -107,14 +110,38 @@ public class MapStateManager : MonoBehaviour {
                 }
             }
         }
+
+        // This keeps track of switching phases without player input
+        switch (currentPhase)
+        {
+            case 1:
+            
+                if (spawnedNPCs.Count > 1 && Vector3.Distance(spawnedNPCs[1].transform.position, spawnedNPCs[0].transform.position) < 15)
+                {
+
+                    currentPhase++;
+                }
+                break;
+            case 2:
+
+                if (spawnedNPCs.Count > 1 && Vector3.Distance(spawnedNPCs[1].transform.position, spawnedNPCs[0].transform.position) < 5)
+                {
+
+                    currentPhase++;
+                }
+                break;
+        }
+
+
         // Check if a game event had caused a change of phase.
         if (currentPhase == previousPhase)
             return;
 
+        
 
-       
-       // If we get here, we've been given a new phase, from either source
-       switch (currentPhase) {
+
+                // If we get here, we've been given a new phase, from either source
+                switch (currentPhase) {
            case 0:
                EnterMapStateZero();
                break;
@@ -229,74 +256,66 @@ public class MapStateManager : MonoBehaviour {
 
     private void EnterMapStateZero()
     {
-        narrator.text = "Smarter Pursue";
-
         previousPhase = 0;
+        currentPhase = 0;
 
-        // Clear any GameObjects from a prevous phase
-        DestroyObjects();
+        narrator.text = "The Hunter Appears";
 
-        // Load in a wolf to go to house
-        GameObject wolf = SpawnItem(spawner2, WolfPrefab, house, SpawnText2, 2);
-        spawnedNPCs.Add(wolf);
+        int delay = 0;
 
-        // Load in hunter to chase wolf
-        spawnedNPCs.Add(SpawnItem(spawner1, HunterPrefab, wolf.GetComponent<NPCController>(), SpawnText2, 1));
+        // Load in a hunter to wander
+        GameObject hunter = SpawnItem(spawner2, HunterPrefab, null, SpawnText2, 4);
+        spawnedNPCs.Add(hunter);
 
+        Invoke("EnterMapStateOne", 3);
 
-        //spawnedNPCs.Add(SpawnItem(spawner2, WolfPrefab, null, SpawnText2, 4));
     }
 
     private void EnterMapStateOne()
     {
-        narrator.text = "Smarter Arrive";
-
+        currentPhase = 1;
         previousPhase = 1;
 
-        // Clear any GameObjects from a prevous phase
-        DestroyObjects();
+        narrator.text = "The Wolf Appears";
 
-        // Load in a wolf to go to house
-        spawnedNPCs.Add(SpawnItem(spawner2, WolfPrefab, house, SpawnText2, 2));
+        
+        // Load in a wolf to wander
+        spawnedNPCs.Add(SpawnItem(spawner1, WolfPrefab, null, SpawnText1, 4));
+
+        
     }
 
     private void EnterMapStateTwo()
     {
-        narrator.text = "Smarter Evade";
+        narrator.text = "The Hunter spots the wolf and believes it is his target. The Wolf runs.";
 
-        previousPhase = 2; 
+        previousPhase = 2;
 
-        // Clear any GameObjects from a prevous phase
-        DestroyObjects();
 
-       
-
-        // Load in hunter to chase wolf
-        GameObject hunter = SpawnItem(spawner1, HunterPrefab, null, SpawnText2, 1);
-        spawnedNPCs.Add(hunter);
-
-        // Load in a wolf to Evade
-        GameObject wolf = SpawnItem(spawner2, WolfPrefab, hunter.GetComponent<NPCController>(), SpawnText2, 3);
-        spawnedNPCs.Add(wolf);
-
-        hunter.GetComponent<SteeringBehavior>().target = wolf.GetComponent<NPCController>();
-
+        spawnedNPCs[0].GetComponent<SteeringBehavior>().target = spawnedNPCs[1].GetComponent<NPCController>();
+        spawnedNPCs[1].GetComponent<SteeringBehavior>().target = spawnedNPCs[0].GetComponent<NPCController>();
+        spawnedNPCs[0].GetComponent<NPCController>().phase = 1;
+        spawnedNPCs[1].GetComponent<NPCController>().phase = 3;
 
 
     }
 
     private void EnterMapStateThree()
     {
-        narrator.text = "Smarter Wander";
+        narrator.text = "Both the Hunter and Wolf move to another area. Little Red arrives and moves to her house.";
 
         previousPhase = 3;
 
-        // Clear any GameObjects from a prevous phase
-        DestroyObjects();
+        spawnedNPCs[0].GetComponent<NPCController>().label.enabled = false;
+        spawnedNPCs[0].GetComponent<NPCController>().DestroyPoints();
+        spawnedNPCs[0].SetActive(false);
+        spawnedNPCs[1].GetComponent<NPCController>().label.enabled = false;
+        spawnedNPCs[1].GetComponent<NPCController>().DestroyPoints();
+        spawnedNPCs[1].SetActive(false);
+        spawnedNPCs.Add(SpawnItem(spawner3, RedPrefab, null, SpawnText3, 9));
+        CreatePath();
 
-        // Load in a wolf to wander
-        GameObject wolf = SpawnItem(spawner2, WolfPrefab, house, SpawnText2, 4);
-        spawnedNPCs.Add(wolf);
+       
 
     }
 
@@ -421,6 +440,8 @@ public class MapStateManager : MonoBehaviour {
           
         }
     }
+
+
 
     private void DestroyTrees()
     {

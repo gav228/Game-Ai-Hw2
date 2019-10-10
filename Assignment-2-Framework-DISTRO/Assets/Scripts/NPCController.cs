@@ -42,6 +42,13 @@ public class NPCController : MonoBehaviour {
     /// </summary>
     void FixedUpdate() {
         switch (phase) {
+            case 0:
+                // stay still, used to delay movement
+                linear = new Vector3(0,0,0);
+                angular = 0;
+                break;
+
+                
             case 1:
 
                 // Pursue
@@ -155,6 +162,16 @@ public class NPCController : MonoBehaviour {
                 // linear = ai.whatever();  -- replace with the desired calls
                 // angular = ai.whatever();
                 break;
+
+            case 9:
+                if (label)
+                {
+                    label.text = name.Replace("(Clone)", "") + "\nAlgorithm: Follow the path algorithm";
+                }
+                linear = ai.PathFollow();
+                angular = ai.Face_Where_Im_Going(linear);
+                break;
+
 
         }
         update(linear, angular, Time.deltaTime);
