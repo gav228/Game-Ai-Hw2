@@ -54,16 +54,19 @@ public class MapStateManager : MonoBehaviour {
     public GameObject[] Path;
     public Text narrator;                   // 
 
+    public TextAsset CSVTreesCoordinates; 
+
     // Use this for initialization. Create any initial NPCs here and store them in the 
     // spawnedNPCs list. You can always add/remove NPCs later on.
 
     void Start() {
         narrator.text = "This is the place to mention major things going on during the demo, the \"narration.\"";
 
-        TreeCount = 25;    // TreeCount isn't showing up in Inspector
+        TreeCount = 50;    // TreeCount isn't showing up in Inspector
 
         trees = new List<GameObject>();
-        SpawnTrees(TreeCount);
+        //SpawnTrees(TreeCount);
+        SpawnSetTrees();
 
         spawnedNPCs = new List<GameObject>();
 
@@ -94,7 +97,8 @@ public class MapStateManager : MonoBehaviour {
             if (inputstring[0] == 'R')
             {
                 DestroyTrees();
-                SpawnTrees(25);
+                //SpawnTrees(50);
+                SpawnSetTrees();
             }
 
             // Look for a number key click
@@ -409,15 +413,32 @@ public class MapStateManager : MonoBehaviour {
         return temp;
     }
 
-    /// <summary>
-    /// SpawnTrees will randomly place tree prefabs all over the map. The diameters
-    /// of the trees are also varied randomly.
-    /// 
-    /// Note that it isn't particularly smart about this (yet): notably, it doesn't
-    /// check first to see if there is something already there. This should get fixed.
-    /// </summary>
-    /// <param name="numTrees">desired number of trees</param>
-    private void SpawnTrees(int numTrees)
+    private void SpawnSetTrees()
+    {
+        string[] coordinateA = CSVTreesCoordinates.text.Split(new char[] { '\n' });
+        for (int i = 0; i < coordinateA.Length; i++)
+        {
+            string[] xyz = coordinateA[i].Split(new char[] { ',' });
+            Vector3 location = new Vector3(float.Parse(xyz[0]), 0, float.Parse(xyz[1]));
+
+            GameObject temp = Instantiate(TreePrefab, location, Quaternion.identity);
+
+            float diameter = UnityEngine.Random.Range(0.2F, 0.7F);
+            temp.transform.localScale = new Vector3(diameter, 1.0f, diameter);
+
+            trees.Add(temp);
+        }
+
+    }
+        /// <summary>
+        /// SpawnTrees will randomly place tree prefabs all over the map. The diameters
+        /// of the trees are also varied randomly.
+        /// 
+        /// Note that it isn't particularly smart about this (yet): notably, it doesn't
+        /// check first to see if there is something already there. This should get fixed.
+        /// </summary>
+        /// <param name="numTrees">desired number of trees</param>
+        private void SpawnTrees(int numTrees)
     {
         float MAX_X = 20;  // Size of the map; ideally, these shouldn't be hard coded
         float MAX_Z = 25;
